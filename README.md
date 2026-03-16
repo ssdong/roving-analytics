@@ -63,6 +63,11 @@ Further investigation is ongoing, but the results so far suggest the Go service 
 <img src="./demo/load_test_overview.gif" width="80%"></img>
 </p>
 
+### Country Distribution(during load test)
+<p align="center">
+<img src="./demo/load_test_country.gif" width="80%"></img>
+</p>
+
 ### Funnel Metrics(during load test)
 <p align="center">
 <img src="./demo/load_test_funnel.gif" width="80%"></img>
