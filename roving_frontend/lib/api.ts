@@ -1,0 +1,1 @@
+export const BACKEND_URL = process.env.ROVING_BACKEND_URL || 'http://localhost:80';

@@ -1,0 +1,1 @@
+export const SITE_ID = process.env.SITE_ID || 1;
