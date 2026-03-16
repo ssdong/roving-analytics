@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
+    "@headlessui/tailwindcss": "^0.2.2",
     "@heroicons/react": "^2.0.18",
     "@nivo/funnel": "^0.83.0",
     "@nivo/geo": "^0.83.0",
