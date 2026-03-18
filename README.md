@@ -107,6 +107,7 @@ Further investigation is ongoing, but the results so far suggest the Go service 
 6. **Access the dashboard**
    - Navigate to `roving_frontend` and run
      ```
+     npm install
      npm run build
      npm run start
      ```
