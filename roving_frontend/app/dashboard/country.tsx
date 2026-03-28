@@ -86,7 +86,6 @@ export default function CountryRankingCard({
       const fetchedData: RawCountryData[] = await response.json();
 
       setCountryRankingData(convertRawCountryRankingData(fetchedData));
-      console.log(`country ranking is ${countryRankingData}`)
     } catch (error) {
       console.error('Error fetching sequence data:', error);
     }

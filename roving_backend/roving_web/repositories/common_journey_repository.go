@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"roving_web/db"
 )
@@ -28,8 +27,8 @@ func (r *CommonJourneyRepository) GetCommonJourneyStat(siteId, timezone, timesta
 			FROM (
 				SELECT JourneyId, PathName
 				FROM roving.web_traffic_event
-				WHERE SiteId = %s
-					AND toTimeZone(Timestamp, '%s') BETWEEN '%s' AND '%s'
+				WHERE SiteId = ?
+					AND toTimeZone(Timestamp, ?) BETWEEN ? AND ?
 				ORDER BY JourneyId, Timestamp
 			)
 			GROUP BY JourneyId
@@ -50,7 +49,6 @@ func (r *CommonJourneyRepository) GetCommonJourneyStat(siteId, timezone, timesta
 		LIMIT 10;
 		`
 
-	query = fmt.Sprintf(query, siteId, timezone, timestampStart, timestampEnd)
 	ctx := context.Background()
 	clickhouseConn, err := db.GetConnection()
 	if err != nil {
@@ -58,7 +56,7 @@ func (r *CommonJourneyRepository) GetCommonJourneyStat(siteId, timezone, timesta
 		return nil, err
 	}
 
-	rows, err := clickhouseConn.Query(ctx, query)
+	rows, err := clickhouseConn.Query(ctx, query, siteId, timezone, timestampStart, timestampEnd)
 	if err != nil {
 		log.Default().Println(err)
 		return nil, err

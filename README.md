@@ -108,9 +108,9 @@ Further investigation is ongoing, but the results so far suggest the Go service 
    - Navigate to `roving_frontend` and run
      ```
      npm install
-     npm run build
-     npm run start
+     npm run dev
      ```
+   - (Notice, in `env.local`, `ROVING_BACKEND_URL` has a default `localhost:80` so you do not have to modify it if you're running on your local machine. However, you do want to give `NEXT_PUBLIC_CONVERSION_PAGE` a meaningful value to accomodate your need. Right now, it has a dummy `/test` value)
    - Now the dashboard should be available at `localhost:3000`
 
 
@@ -135,5 +135,9 @@ When running the dashboard locally, configure the backend URL:
 ```
 ROVING_BACKEND_URL=https://analytics.yourdomain.com
 ```
+
+Same for `NEXT_PUBLIC_CONVERSION_PAGE` if you need a different value than the default dummy `/test`.
+
+_You can create a `.env.production` to override the local values in `.env.local` if you want to deploy the dashboard to prod. Use `npm run build` and `npm run start` for production._
 
 The dashboard will then query your Go backend and display analytics metrics for your site. I haven't  implemented authentication for accessing the Go service(it's still WIP) but this setup is simple and straightforward to view your own site's analytics metrics.

@@ -27,13 +27,13 @@ func (r *FunnelRepository) GetFunnelStats(urls []string, siteId, timezone, times
 		return nil, err
 	}
 
-	sql := r.generateFunnelSQL(urls, siteId, timezone, timestampStart, timestampEnd)
+	sql, args := r.generateFunnelSQL(urls, siteId, timezone, timestampStart, timestampEnd)
 
 	if sql == "" {
 		return []FunnelResult{}, nil
 	}
 
-	rows, err := clickhouseConn.Query(ctx, sql)
+	rows, err := clickhouseConn.Query(ctx, sql, args...)
 	if err != nil {
 		log.Default().Println(err)
 		return nil, err
@@ -57,44 +57,51 @@ func (r *FunnelRepository) GetFunnelStats(urls []string, siteId, timezone, times
 // An example of a generated SQL based on sequence ["/home", "/blog", "/press", "/activation"] looks like
 /**
 	WITH JourneySequences AS (
-		SELECT
-			JourneyId,
-			groupArray(PathName) AS urls
-		FROM (
-			SELECT JourneyId, PathName
-			FROM roving.web_traffic_event
-			WHERE SiteId = 1 AND toTimeZone(Timestamp,'America/Toronto')
-			BETWEEN '2026-03-01' AND '2026-03-08'
-			ORDER BY JourneyId, Timestamp
-		)
-		GROUP BY JourneyId
-	)
-
-	SELECT ['/home'] AS Sequence, count() AS Count
-	FROM JourneySequences
-	WHERE arraySlice(urls,1,1) = ['/home']
-
+            SELECT
+                JourneyId,
+                groupArray(PathName) AS urls
+            FROM (
+                SELECT JourneyId, PathName
+                FROM roving.web_traffic_event
+                WHERE SiteId = '1' AND toTimeZone(Timestamp, 'America/Toronto') BETWEEN '2026-03-01 00:00:00' AND '2026-03-28 23:59:59'
+                ORDER BY JourneyId, Timestamp
+            )
+            GROUP BY JourneyId
+        )
+    
+			SELECT
+                ['/home'] AS Sequence,
+                count() AS Count
+            FROM JourneySequences
+            WHERE arraySlice(urls, 1, 1) = ['/home']
+		
 	UNION ALL
 
-	SELECT ['/home','/blog'] AS Sequence, count() AS Count
-	FROM JourneySequences
-	WHERE arraySlice(urls,1,2) = ['/home','/blog']
-
+			SELECT
+                ['/home', '/blog'] AS Sequence,
+                count() AS Count
+            FROM JourneySequences
+            WHERE arraySlice(urls, 1, 2) = ['/home', '/blog']
+		
 	UNION ALL
 
-	SELECT ['/home','/blog','/press'] AS Sequence, count() AS Count
-	FROM JourneySequences
-	WHERE arraySlice(urls,1,3) = ['/home','/blog','/press']
-
+			SELECT
+                ['/home', '/blog', '/press'] AS Sequence,
+                count() AS Count
+            FROM JourneySequences
+            WHERE arraySlice(urls, 1, 3) = ['/home', '/blog', '/press']
+		
 	UNION ALL
 
-	SELECT ['/home','/blog','/press','/activation'] AS Sequence, count() AS Count
-	FROM JourneySequences
-	WHERE arraySlice(urls,1,4) = ['/home','/blog','/press','/activation']
+			SELECT
+                ['/home', '/blog', '/press', '/activation'] AS Sequence,
+                count() AS Count
+            FROM JourneySequences
+            WHERE arraySlice(urls, 1, 4) = ['/home', '/blog', '/press', '/activation']
 **/
-func (r *FunnelRepository) generateFunnelSQL(urls []string, siteId string, timezone string, timestampStart string, timestampEnd string) string {
+func (r *FunnelRepository) generateFunnelSQL(urls []string, siteId string, timezone string, timestampStart string, timestampEnd string) (string, []any) {
 	if len(urls) == 0 {
-		return ""
+		return "", nil
 	}
 
 	baseCTE := `
@@ -105,30 +112,38 @@ func (r *FunnelRepository) generateFunnelSQL(urls []string, siteId string, timez
             FROM (
                 SELECT JourneyId, PathName
                 FROM roving.web_traffic_event
-                WHERE SiteId = %s AND toTimeZone(Timestamp, '%s') BETWEEN '%s' AND '%s'
+                WHERE SiteId = ? AND toTimeZone(Timestamp, ?) BETWEEN ? AND ?
                 ORDER BY JourneyId, Timestamp
             )
             GROUP BY JourneyId
         )
     `
 
-	// Insert timezone and timestamps into the base CTE
-	baseCTE = fmt.Sprintf(baseCTE, siteId, timezone, timestampStart, timestampEnd)
+	var query strings.Builder
+	args := make([]any, 0, 4 + len(urls))
 
-	queries := make([]string, 0, len(urls))
+	args = append(args, siteId, timezone, timestampStart, timestampEnd)
+
+	query.WriteString(baseCTE)
+
 	for i := 1; i <= len(urls); i++ {
-		currentSequence := urls[:i]
-		// Convert the slice of strings to a single string with comma-separated values
-		joinedSequence := "['" + strings.Join(currentSequence, "', '") + "']"
-		query := fmt.Sprintf(`
-            SELECT
-                %s AS Sequence,
+		if i > 1 {
+			query.WriteString("\nUNION ALL\n")
+		}
+
+		currentSequence := make([]string, i)
+		copy(currentSequence, urls[:i])
+
+		query.WriteString(fmt.Sprintf(`
+			SELECT
+                ? AS Sequence,
                 count() AS Count
             FROM JourneySequences
-            WHERE arraySlice(urls, 1, %d) = %s
-        `, joinedSequence, i, joinedSequence)
-		queries = append(queries, query)
+            WHERE arraySlice(urls, 1, %d) = ?
+		`, i))
+
+		args = append(args, currentSequence, currentSequence)
 	}
 
-	return baseCTE + strings.Join(queries, "\nUNION ALL\n")
+	return query.String(), args
 }

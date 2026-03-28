@@ -1,0 +1,1 @@
+export const CONVERSION_PAGE = process.env.NEXT_PUBLIC_CONVERSION_PAGE || '/sign-up';

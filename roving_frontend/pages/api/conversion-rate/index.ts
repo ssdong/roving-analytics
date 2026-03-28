@@ -17,12 +17,6 @@ export default async function handler(
             .json({ message: 'Required query parameters are missing.' });
         }
 
-        console.log("siteId: " + siteId)
-        console.log("timestampStart: " + timestampStart)
-        console.log("timestampEnd: " + timestampEnd)
-        console.log("targetConversionPage: " + targetConversionPage)
-        console.log("timezone: " + timezone)
-
         const response = await fetch(
           `${BACKEND_URL}/api/conversion-rate?siteId=${siteId}&timestampStart=${timestampStart}&timestampEnd=${timestampEnd}&targetConversionPage=${targetConversionPage}&timezone=${timezone}`
         );

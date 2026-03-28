@@ -22,6 +22,7 @@ import {
   DataTemplateCallback
 } from '@/app/utils/time';
 import Skeleton from '@/components/ui/skeleton';
+import { CONVERSION_PAGE } from '@/lib/conversion';
 
 interface TrafficData {
   Date: string;
@@ -33,8 +34,7 @@ interface TrafficeOverviewProps {
   dateRangeValue: DateRangePickerValue;
 }
 
-// This needs to be able to be configured by the user
-const targetPage = "/sign-up"
+const targetPage = CONVERSION_PAGE;
 
 const trafficDataTemplate: DataTemplateCallback = (date) => ({
   Date: date,
